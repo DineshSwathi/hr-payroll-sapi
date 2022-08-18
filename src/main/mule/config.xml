@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+
+	<http:listener-config
+		name="hr-payroll-eapi-integration-httpListenerConfig">
+		<http:listener-connection host="${http.host}"
+			port="${http.port}" />
+	</http:listener-config>
+	<apikit:config name="hr-payroll-eapi-integration-config"
+		api="resource::96a0b27b-032b-447c-85b8-272596a463b6:hr-payroll-eapi-integration:1.0.0:raml:zip:hr-payroll-eapi-integration.raml"
+		outboundHeadersMapName="outboundHeaders"
+		httpStatusVarName="httpStatus" />
+	<salesforce:sfdc-config name="Salesforce_Config"
+		doc:name="Salesforce Config"
+		doc:id="625d3cea-9abf-46a4-bcae-65ac17159191">
+		<salesforce:basic-connection
+			username="${sf.username}" password="${secure::sf.password}"
+			securityToken="${secure::sf.securitytoken}" />
+	</salesforce:sfdc-config>
+	<api-gateway:autodiscovery apiId="18023382"
+		ignoreBasePath="true" doc:name="API Autodiscovery"
+		doc:id="5cc2cafe-2605-43fa-9383-85c4f65ee297"
+		flowRef="hr-payroll-eapi-integration-main" />
+	<configuration-properties
+		doc:name="Configuration properties"
+		doc:id="8edc1ad6-b907-4e7c-b7a0-af20975c3dbf"
+		file="mule-${env}.properties" />
+	<secure-properties:config
+		name="Secure_Properties_Config" doc:name="Secure Properties Config"
+		doc:id="058514d5-30ff-4d79-852a-920f6e616138"
+		file="mule-${env}.properties" key="encryptionkey123" />
+	<configuration doc:name="Configuration" doc:id="cf1ccb6b-7b08-4b76-8324-3548d2e61d57" defaultErrorHandler-ref="global_Error_Handler" />
+
+
+
+</mule>

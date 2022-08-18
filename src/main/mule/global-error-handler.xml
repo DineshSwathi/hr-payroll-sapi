@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<error-handler name="global_Error_Handler" doc:id="b695f3ea-e9a9-4d64-be44-27c3c0d6f945">
+	
+	<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ba86829d-1604-4494-b0d0-934e998ef363" type="SALESFORCE:INVALID_INPUT">
+				<ee:transform doc:name="Transform Message" doc:id="6a101136-7707-483e-ae41-4e6f0e68249b" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"errorMessage" : error.description,
+	"detailedDescription" : error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[400]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-propagate>
+	
+	
+</error-handler>
+</mule>

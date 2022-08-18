@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ftp="http://www.mulesoft.org/schema/mule/ftp" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ftp http://www.mulesoft.org/schema/mule/ftp/current/mule-ftp.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<flow name="insertOrUpdateEmployeeRecords" doc:id="f22831b7-bfd7-4e9f-9048-a79ccd9dbc36" >
+		<salesforce:upsert doc:id="6e6d27a7-ed9a-4000-849a-f75b9c1fd016" config-ref="Salesforce_Config" objectType="Employee__c" externalIdFieldName="Employee_ID__c" />
+	</flow>
+	<flow name="deleteEmployeeRecord" doc:id="f37a18e1-9626-423a-bec7-274db0eb6332" >
+		<salesforce:query doc:name="Query" doc:id="93fb366f-7496-4c9c-b1c8-6f2db9aa589a" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query><![CDATA[SELECT Id FROM Employee__c where Employee_ID__c = ':empid']]></salesforce:salesforce-query>
+			<salesforce:parameters><![CDATA[#[output application/java
+---
+{
+	empid : attributes.uriParams.'eid'
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<salesforce:delete doc:name="Delete" doc:id="0354a59f-2f0c-48f2-a3f7-046c896235e8" config-ref="Salesforce_Config">
+			<salesforce:ids><![CDATA[#[payload..Id]]]></salesforce:ids>
+		</salesforce:delete>
+	</flow>
+	<flow name="queryAllEmployees" doc:id="b0e0a623-6536-4b7c-8fa9-93650f443aa0" >
+		<salesforce:query doc:name="Query All Records" doc:id="1ca91869-90ea-41f7-9cd3-608799c9577f" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query><![CDATA[SELECT Id, Employee_ID__c, Date_Of_Birth__c, Designation__c, Department__c, Salary__c, Name FROM Employee__c]]></salesforce:salesforce-query>
+		</salesforce:query>
+	</flow>
+	<flow name="querySingleEmployeeRecord" doc:id="4239e4ae-4011-44db-824d-7a03a8bb3581" >
+		<salesforce:query doc:name="Query Single Record" doc:id="a9bd11d5-1d9d-4ea5-8bbe-bbc56f8dbae4" config-ref="Salesforce_Config" >
+			<salesforce:salesforce-query ><![CDATA[SELECT Id, Employee_ID__c, Date_Of_Birth__c, Designation__c, Department__c, Salary__c, Name FROM Employee__c where Employee_ID__c = ':empid']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	empid : attributes.uriParams.'eid'
+}]]]></salesforce:parameters>
+		</salesforce:query>
+	</flow>
+	<flow name="batch-job-demo" doc:id="e9fe0792-253e-48a9-b53c-da82fbb4b24c" >
+		<http:listener doc:name="Listener" doc:id="c9cde4b3-c128-4fe0-9284-ef25e96feb0d" config-ref="hr-payroll-eapi-integration-httpListenerConfig" path="/batchDemo"/>
+		<file:read doc:id="be35b9ab-6184-46f8-8104-b99f4a7d48d0" path="E:\Files\nacgfs-jun2021-tables.csv" />
+		<ee:transform doc:name="Transform Message" doc:id="4143087a-f3f9-4f9f-91b0-a7153674ef17" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<batch:job jobName="Batch_Job" doc:id="c7f84365-3562-49ff-a71a-e3dfcc1d03c5" blockSize="500" maxConcurrency="32" maxFailedRecords="-1">
+			<batch:process-records >
+				<batch:step name="Batch_Step" doc:id="0b820c6f-cfdf-47ad-af39-fad478f1f9cb" >
+					<logger level="INFO" doc:name="Logger in batch step" doc:id="22180511-ae81-403d-b8e9-e1a1e9bd8653" message="#[payload]" />
+					<validation:is-not-blank-string doc:name="Is not blank string" doc:id="2c1e44ab-1306-48a7-9970-9eb5f673869a" value="#[payload.STATUS]" message="the status value for seriese reference #[payload.Series_reference] is empty"/>
+				</batch:step>
+				<batch:step name="Batch_Step1" doc:id="8a24eb23-8e30-4430-a3f7-8399d482c38d" >
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="734aa9ad-507d-4207-913a-3cd6456feb89" size="2000">
+						<file:write doc:name="Copy_of_Write" doc:id="2fc0357e-5843-4842-acba-a83184e152bd" path="E:\Files\successrecords.json" mode="APPEND">
+						<file:content><![CDATA[#[%dw 2.0
+output application/json
+---
+payload]]]></file:content>
+					</file:write>
+					</batch:aggregator>
+				</batch:step>
+				<batch:step name="Batch_Step_to_process_failed_records" doc:id="ee363e35-e293-4cf2-a055-a60395344973" acceptPolicy="ONLY_FAILURES">
+					<logger level="INFO" doc:name="Logger" doc:id="3eedd774-288b-4a1d-a93e-42b85fab148b" message="#[payload]"/>
+					<file:write doc:name="Write" doc:id="058341dd-8f7a-46a4-a265-4b3c81799c52" path="E:\Files\failedrecords.json" mode="APPEND">
+						<file:content ><![CDATA[#[%dw 2.0
+output application/json
+---
+payload]]]></file:content>
+					</file:write>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<ee:transform doc:name="Transform Message" doc:id="b95122bc-292d-419b-b6c8-0e09be54ce12">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="637acbba-9440-4a3a-a7ee-e5e5ee4f711e" message="#[payload]"/>
+			</batch:on-complete>
+		</batch:job>
+	</flow>
+</mule>
